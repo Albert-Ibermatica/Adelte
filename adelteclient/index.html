@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style/styles.css">
+    <script src="script/img_upload.js"></script>
+    <script src="script/manage_servers.js"></script>
+    <title>Adelte Door Recognition Client</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+</head>
+<script>
+    window.onload= currentTime;
+    function currentTime() {
+        let date = new Date();
+        let hh = date.getHours();
+        let mm = date.getMinutes();
+        let ss = date.getSeconds();
+        if(hh == 0){
+            hh = 12;
+        }
+        hh = (hh < 10) ? "0" + hh : hh;
+        mm = (mm < 10) ? "0" + mm : mm;
+        ss = (ss < 10) ? "0" + ss : ss;
+        let time = hh + ":" + mm + ":" + ss;
+        document.getElementById("watch").innerText = time;
+        let t = setTimeout(function(){ currentTime() }, 1000);
+
+
+    }
+</script>
+<script>
+    // conectamos con el websocket tambien
+    const socket = io('http://127.0.0.1:8080');
+    socket.connect();
+    socket.emit('aws_status')
+    socket.on('aws_status_response', function (ret){
+        
+        console.log(ret)
+        // stopped
+        if(ret == 'stopped'){
+              var elem = document.getElementById('servidorActivo')
+              elem.innerText = "Servidor AWS: Detenido"
+              elem.style.color ="red"
+        }
+        // stopping
+        
+        if(ret == 'stopping'){
+        
+             var elem = document.getElementById('servidorActivo')
+             elem.innerText = "Servidor AWS: Deteniendo ..."
+             elem.style.color ="yellow"
+           
+        }
+        // running
+        if(ret == 'running'){
+               var elem = document.getElementById('servidorActivo')
+               elem.innerText = "Servidor AWS: Activo"
+               elem.style.color ="green"
+        }
+        // pending
+        if(ret == 'pending'){
+               var elem = document.getElementById('servidorActivo')
+               elem.innerText = "Servidor AWS: Iniciando ..."
+               elem.style.color ="blue"
+        }
+        
+    })
+    
+    
+    var intervalId = window.setInterval(function(){
+                socket.emit('aws_status')
+        }, 5000);
+    
+    socket.on('connect_error',  function () {
+        //window.alert('conexion con el ws fallida')
+        console.log('conexion con el websocket fallida, el websocket no esta arrancado')
+    })
+    socket.on('connect_failed',  function () {
+        //window.alert('conexion con el ws fallida')
+        console.log('conexion con el websocket fallida, el websocket no esta arrancado')
+    })
+    socket.on('ec2_ready', function () {
+       window.alert('Servidores AWS iniciados')
+       var elem = document.getElementById('servidorActivo')
+       elem.innerText = "Servidor AWS: Activo"
+       elem.style.color ="green"
+       console.log('ec2 ready')
+    })
+    socket.on('ec2_stopped', function () {
+       window.alert('Servidores AWS detenidos')
+       var elem = document.getElementById('servidorActivo')
+       elem.innerText = "Servidor AWS: Detenido"
+       elem.style.color ="red"
+       console.log('ec2 stopped')
+    })
+</script>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="btn btn-primary" role="button" href="#" type="button">Live cam</a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-primary" href="img_processing.html" role="button" type="button">Image processing</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mx-auto order-0">
+            <a id="navbarLabel" class="navbar-brand mx-auto" style="color: white"> Adelte plane door detection client</a>
+        </div>
+        <div class="navbar-collapse collapse w-100 order-3 dual-collapse2">
+            <ul  class="navbar-nav ml-auto">
+              <li class="nav-item">
+                     <a id="servidorActivo" class="navbar-brand me-2" style="color: red"></a>
+                </li>
+                <li class="nav-item">
+                    <a id='watch' class="navbar-brand me-2" style="color: white"></a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-success"  role="button" onclick="start_instances()" type="button">Iniciar servidores</a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-danger"  role="button" onclick="stop_instances()" type="button">Detener servidores</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+<br>
+<body>
+    <div class="displayArea">
+        <div class="col">
+            <img id="framedisplay" style="border-radius: 2%; width: 800px; height: 600px;" src="https://static.vueling.com/blog/media/1045/060-19-de_pistas_y_nu-meros.jpg" alt="imagen"/>
+        </div>
+        <div class="col">
+            <img id="imgdisplay" style="border-radius: 2%; width: 800px; height: 600px;" src="https://static.vueling.com/blog/media/1045/060-19-de_pistas_y_nu-meros.jpg" alt="imagen"/>
+        </div>
+    </div>
+    <div class="controlButtons">
+        <button id="startButton" class="btn btn-primary " type="button" onclick="openConnection()">Start door recognition</button>
+        <button id="stopButton" class="btn btn-primary " type="button" onclick="closeConnection()">Stop door recognition</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>
+<script>
+    function openConnection() {
+        var stopButton = document.getElementById('stopButton')
+        stopButton.disabled= false;
+        var startButton = document.getElementById('startButton')
+        startButton.disabled= true;
+        socket.connect()
+        socket.emit('openConnection');
+        socket.emit('returnFrames')
+    }
+    socket.on('liveResponse',({img,frame}) => {
+       var enc = new TextDecoder("utf-8");
+       
+       // el ret es un json con el fotograma y la imagen procesada.
+       //console.log("------------ESTO ES LA VARIABLE RET ::")
+       //console.log(ret)
+       
+       console.log("ret.img")
+       console.log(img)
+       console.log("ret.frame")
+       console.log(frame)
+       var base64img = enc.decode(img)
+       console.log(base64img)
+       //console.log('data:image/jpeg;base64,'+base64img)
+       document.getElementById('imgdisplay').src='data:image/jpeg;base64,'+base64img
+       base64img = enc.decode(frame)
+       document.getElementById('framedisplay').src='data:image/jpeg;base64,'+base64img
+       socket.emit('openConnection')
+       
+       
+
+    })
+    function closeConnection() {
+        var stopButton = document.getElementById('stopButton')
+        stopButton.disabled= true;
+        var startButton = document.getElementById('startButton')
+        startButton.disabled= false;
+
+        socket.emit('closeConnection');
+        socket.disconnect();
+    }
+
+
+</script>

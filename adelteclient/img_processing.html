@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style/styles.css">
+    <script src="script/img_upload.js"></script>
+    <script src="script/manage_servers.js"></script>
+    <title>Adelte Door Recognition Client</title>
+</head>
+<style>
+    #contextMenu {
+        position: fixed;
+        background:black;
+        color: white;
+        cursor: pointer;
+        border: 1px black solid
+    }
+    #contextMenu > p {
+        padding: 0 1rem;
+        margin: 0
+    }
+    #contextMenu > p:hover {
+        background: black;
+        color: white;
+    }
+    #spinner-div {
+        position: fixed;
+        display: none;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        text-align: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 2;
+    }
+</style>
+<script>
+    window.onload= currentTime;
+    function currentTime() {
+        let date = new Date();
+        let hh = date.getHours();
+        let mm = date.getMinutes();
+        let ss = date.getSeconds();
+        if(hh == 0){
+            hh = 12;
+        }
+        hh = (hh < 10) ? "0" + hh : hh;
+        mm = (mm < 10) ? "0" + mm : mm;
+        ss = (ss < 10) ? "0" + ss : ss;
+        let time = hh + ":" + mm + ":" + ss;
+        document.getElementById("watch").innerText = time;
+        let t = setTimeout(function(){ currentTime() }, 1000);
+
+
+    }
+</script>
+<script>
+    // conectamos con el websocket tambien
+    const socket = io('http://127.0.0.1:8080');
+    socket.connect();
+    
+    socket.emit('aws_status')
+    socket.on('aws_status_response', function (ret){
+        
+        console.log(ret)
+        // stopped
+        if(ret == 'stopped'){
+              var elem = document.getElementById('servidorActivo')
+              elem.innerText = "Servidor AWS: Detenido"
+              elem.style.color ="red"
+        }
+        
+        // stopping
+        
+        if(ret == 'stopping'){
+        
+             var elem = document.getElementById('servidorActivo')
+             elem.innerText = "Servidor AWS: Deteniendo ..."
+             elem.style.color ="yellow"
+           
+        }
+        // running
+        if(ret == 'running'){
+               var elem = document.getElementById('servidorActivo')
+               elem.innerText = "Servidor AWS: Activo"
+               elem.style.color ="green"
+        }
+        
+        // pending
+        if(ret == 'pending'){
+               var elem = document.getElementById('servidorActivo')
+               elem.innerText = "Servidor AWS: Iniciando ..."
+               elem.style.color ="blue"
+        }
+        
+    })
+    
+    var intervalId = window.setInterval(function(){
+                socket.emit('aws_status')
+        }, 5000);
+    
+    socket.on('connect_error',  function () {
+        //console.log('conexion con el websocket fallida, el websocket no esta arrancado')
+    })
+    socket.on('connect_failed',  function () {
+        //console.log('conexion con el websocket fallida, el websocket no esta arrancado')
+    })
+    socket.on('ec2_ready', function () {
+       window.alert('Servidores AWS iniciados')
+       var elem = document.getElementById('servidorActivo')
+       elem.innerText = "Servidor AWS: Activo"
+       elem.style.color ="green"
+       console.log('ec2 started')
+    })
+    socket.on('ec2_stopped', function () {
+       window.alert('Servidores AWS detenidos')
+       var elem = document.getElementById('servidorActivo')
+       elem.innerText = "Servidor AWS: Detenido"
+       elem.style.color ="red"
+       console.log('ec2 stopped')
+    })
+</script>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
+            <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="btn btn-primary" role="button" href="index.html" type="button">Live cam</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary" href="#" role="button" type="button">Image processing</a>
+                    </li>
+            </ul>
+        </div>
+
+        <div class="mx-auto order-0">
+            <a id="navbarLabel" class="navbar-brand mx-auto" style="color: white"> Adelte plane door detection client</a>
+        </div>
+        <div class="navbar-collapse collapse w-100 order-3 dual-collapse2">
+            <ul  class="navbar-nav ml-auto">
+                <li class="nav-item">
+                     <a id="servidorActivo" class="navbar-brand me-2" style="color: red"></a>
+                </li>
+                <li class="nav-item">
+                    <a id='watch' class="navbar-brand me-2" style="color: white"></a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-success"  role="button" onclick="start_instances()" type="button">Iniciar servidores</a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-danger"  role="button" onclick="stop_instances()" type="button">Detener servidores</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+<body>
+<br>
+<div class="displayArea">
+        <div class="col">
+                <table class="img_table">
+                    <tbody>
+                    <tr>
+                        <td><img id="1" class="imgGrid" src="sample_images/sample.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="2" class="imgGrid" src="sample_images/sample1.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="3" class="imgGrid" src="sample_images/sample2.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="4"  class="imgGrid" src="sample_images/sample9.jpg" alt="img1" width="200" height="200"></td>
+                    </tr>
+                    <tr>
+                        <td><img id="5" class="imgGrid" src="sample_images/sample3.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="6" class="imgGrid" src="sample_images/sample4.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="7" class="imgGrid" src="sample_images/sample5.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="8" class="imgGrid" src="sample_images/sample10.jpg" alt="img1" width="200" height="200"></td>
+                    </tr>
+                    <tr>
+                        <td><img id="9" class="imgGrid" src="sample_images/sample7.jpeg" alt="img1" width="200" height="200"></td>
+                        <td><img id="10" class="imgGrid" src="sample_images/sample8.jpeg" alt="img1" width="200" height="200"></td>
+                        <td><img id="11" class="imgGrid" src="sample_images/sample6.jpg" alt="img1" width="200" height="200"></td>
+                        <td><img id="12" class="imgGrid" src="sample_images/sample11.jpg" alt="img1" width="200" height="200"></td>
+                    </tr>
+                    </tbody>
+                </table>
+        </div>
+        <div class="col">
+            <div>
+                 <div id="spinner-div" class="pt-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            <img id="imgdisplay" style="border-radius: 2%; width: 800px; height: 600px;" src="https://upload.wikimedia.org/wikipedia/commons/b/b5/800x600_Wallpaper_Blue_Sky.png"  alt="imagen"/>
+        </div>
+</div>
+<div class="imgselect"></div>
+</br>
+<script>
+    var TargetImg;
+    addListeners();
+    function addListeners(){
+
+        const imgs = document.querySelectorAll('.imgGrid');
+        imgs.forEach(img => {
+
+            var imagen = img;
+
+            img.setAttribute("title", "Click Izquierdo para procesar imagen, clic derecho para seleccionar una nueva imagen");
+
+            img.addEventListener('click', function handleClick(event) {
+
+                if (event.button == 0){
+
+                    console.log('imgclicked', event);
+                    var imgAttribute = img.getAttribute('src')
+                    console.log(imgAttribute)
+                    processSelectedImg(img)
+                
+                }
+            });
+            img.addEventListener('contextmenu', function(e) {
+                eventTarget= e;
+                e.preventDefault();
+                TargetImg = img;
+                console.log('rightclick')
+                var menu = document.createElement("div")
+                menu.id = "contextMenu"
+                menu.style = `top:${e.pageY-10}px;left:${e.pageX-40}px`
+                menu.onmouseleave = () => contextMenu.outerHTML = ''
+                menu.innerHTML = "<p style='font-size: 23px'  onclick='loadImgUrl()'>Sube imagen con URL</p>" +
+                    "<p style='font-size: 23px' onclick='loadImgFile()'>Sube archivo de imagen</p>" +
+                    "<p style='font-size: 23px' onclick='deleteImg()'>Elimina imagen</p>"
+                document.body.appendChild(menu)
+
+                return false;
+            }, false);
+        });
+
+    }
+    function loadImgUrl(){
+
+        console.log(TargetImg);
+        // metemos la url de la imagen y la reemplazamos por la que tiene
+        var antiguoSrc = TargetImg.src;
+        var result = window.prompt('URL:')
+        if (result != null ){
+            TargetImg.src = result;
+        }else{
+            TargetImg.src = antiguoSrc;
+        }
+    }
+
+    async function loadImgFile(){
+        console.log(TargetImg)
+        var input = document.createElement('input');
+        input.id = 'fileupload';
+        input.type = 'file';
+        input.onchange = e => {
+
+            var file = e.target.files[0];
+            var form_data = new FormData();
+            form_data.append('file', file);
+            //alert(form_data);
+            $.ajax({
+                url: 'mvfile.php', // <-- apuntamos al sccript de php que mueve el archivo
+                dataType: 'text',  // <-- texto que se espera de vuelta
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: form_data,
+                type: 'post',
+                error: function(){
+                    window.alert('no se ha podido conectar con el servidor')
+                },
+                success: function(php_script_response){
+                   // alert(php_script_response); // <-- display response from the PHP script, if any
+                    TargetImg.src = php_script_response;
+                },
+                timeout: 10000
+            }).then(function () {
+
+            }).catch(function (e) {
+                if(e.statusText == 'timeout'){
+
+                    window.alert('timeout: no se ha podido conectar con el servidor papafrita')
+
+                }
+            });
+
+        }
+        input.click();
+    }
+    function deleteImg(){
+
+        TargetImg.src = null;
+
+    }
+
+</script>
+</body>
+</html>
