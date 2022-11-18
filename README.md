@@ -11,6 +11,9 @@ Cliente web, que permite interactuar con la aplicacion.
 Servidor Amazon EC2 donde estan alojadas 2 instancias de Amazon Linux que tienen instalados
 los modelos de deep learning que interpretan y devuelven las imagenes.
 
+adelteclient y adelteclient video son casi iguales, solo que una muestra fotogramas en directo y la otra 
+un video en directo en RTSP que es algo inestable.
+
 # Guia de instalación - Entorno conda, servidor html, aws cli.
 
 Es necesario instalar Conda y el entorno de ejecucion con las librerias
