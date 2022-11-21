@@ -10,9 +10,11 @@ import videocapture
 import run_ec2_instances
 import stop_ec2_instances
 import requests
+from engineio.payload import Payload
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
+Payload.max_decode_packets = 500
 socketio = SocketIO(app, cors_allowed_origins="*")
 app.config['CORS_HEADERS'] = 'Content-Type'
 CORS(app)
