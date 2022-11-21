@@ -136,10 +136,10 @@
 <body>
     <div class="displayArea">
         <div class="col">
-            <img id="framedisplay" style="border-radius: 2%; width: 800px; height: 600px;" src="https://static.vueling.com/blog/media/1045/060-19-de_pistas_y_nu-meros.jpg" alt="imagen"/>
+            <img id="framedisplay" style="border-radius: 2%; width: 800px; height: 700px;" src="https://static.vueling.com/blog/media/1045/060-19-de_pistas_y_nu-meros.jpg" alt="imagen"/>
         </div>
         <div class="col">
-            <img id="imgdisplay" style="border-radius: 2%; width: 800px; height: 600px;" src="https://static.vueling.com/blog/media/1045/060-19-de_pistas_y_nu-meros.jpg" alt="imagen"/>
+            <img id="imgdisplay" style="border-radius: 2%; width: 800px; height: 700px;" src="https://static.vueling.com/blog/media/1045/060-19-de_pistas_y_nu-meros.jpg" alt="imagen"/>
         </div>
     </div>
     <div class="controlButtons">
@@ -152,6 +152,7 @@
 </html>
 <script>
     function openConnection() {
+        window.alert('Iniciado procesamiento de imagen')
         var stopButton = document.getElementById('stopButton')
         stopButton.disabled= false;
         var startButton = document.getElementById('startButton')
@@ -183,6 +184,7 @@
 
     })
     function closeConnection() {
+        window.alert('Deteniendo procesamiento de imagen')
         var stopButton = document.getElementById('stopButton')
         stopButton.disabled= true;
         var startButton = document.getElementById('startButton')

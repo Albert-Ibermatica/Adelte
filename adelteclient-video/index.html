@@ -169,6 +169,7 @@
 </html>
 <script>
     function openConnection() {
+        window.alert('Iniciado procesamiento de imagen')
         var stopButton = document.getElementById('stopButton')
         stopButton.disabled= false;
         var startButton = document.getElementById('startButton')
@@ -200,6 +201,7 @@
 
     })
     function closeConnection() {
+        window.alert('Finalizando procesamiento de imagen')
         var stopButton = document.getElementById('stopButton')
         stopButton.disabled= true;
         var startButton = document.getElementById('startButton')
